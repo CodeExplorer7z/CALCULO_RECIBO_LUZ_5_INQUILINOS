@@ -167,6 +167,7 @@
         <div class="section-title">Cálculos Finales Recibo</div>
         <div class="grid-2">
             <div class="form-group"><label>kWh Consum:</label><input type="text" id="kwh_m" class="readonly" readonly></div>
+            <div class="form-group"><label>N° días recibo:</label><input type="text" id="dias_recibo_m" class="readonly" readonly></div>
             <div class="form-group"><label>Subtotal:</label><input type="text" id="sub_m" class="readonly" readonly></div>
             <div class="form-group"><label>IGV (18%):</label><input type="text" id="igv_m" class="readonly" readonly></div>
             <div class="form-group"><label>Aporte Ley:</label><input type="text" id="aporte_m" class="readonly" readonly></div>
@@ -218,6 +219,11 @@
                 <div class="form-group"><label>F. Act:</label><input type="date" id="fec_act_i${i}" onchange="calculate()"></div>
             </div>
 
+            <div class="grid-2" style="margin-top:10px">
+                <div class="form-group"><label>N° días trans:</label><input id="dias_i${i}" class="readonly" readonly></div>
+                <div class="form-group"><label>kWh/día:</label><input id="kwh_dia_i${i}" class="readonly" readonly></div>
+            </div>
+
             <div class="section-title">Desglose Inquilino (S/.)</div>
             <div class="grid-2">
                 <div class="form-group"><label>Energía:</label><input id="ener_i${i}" class="readonly" readonly></div>
@@ -238,7 +244,7 @@
     }
 
     function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
-    function setVal(id, val) { document.getElementById(id).value = val.toFixed(2); }
+    function setVal(id, val, decimals = 2) { document.getElementById(id).value = val.toFixed(decimals); }
 
     function formatDateLong(dateStr) {
         if (!dateStr) return "";
@@ -253,6 +259,12 @@
         const num_div = getVal('num_inquilinos') || 1;
         const tarifa = getVal('tarifa');
 
+        // Cálculo Días Recibo Principal
+        const f1_m = document.getElementById('fec_act_m').value;
+        const f2_m = document.getElementById('fec_ant_m').value;
+        const dias_m = (f1_m && f2_m) ? Math.max(1, Math.floor((new Date(f1_m+'T00:00:00') - new Date(f2_m+'T00:00:00')) / 864e5) + 1) : 0;
+        document.getElementById('dias_recibo_m').value = dias_m > 0 ? dias_m : "0";
+
         const kwh_m = Math.max(0, getVal('lec_act_m') - getVal('lec_ant_m'));
         const sub_m = getVal('rep_m') + getVal('cargo_fijo_m') + (kwh_m * tarifa) + getVal('alum_m') + getVal('int_m');
         const igv_m = sub_m * 0.18;
@@ -266,23 +278,24 @@
         setVal('total_pagar_m', total_m);
 
         for (let i = 1; i <= 3; i++) {
-            const f1 = document.getElementById('fec_act_m').value;
-            const f2 = document.getElementById('fec_ant_m').value;
-            const dias_m = (f1 && f2) ? Math.max(1, Math.floor((new Date(f1+'T00:00:00') - new Date(f2+'T00:00:00')) / 864e5) + 1) : 0;
-
             const fi1 = document.getElementById(`fec_act_i${i}`).value;
             const fi2 = document.getElementById(`fec_ant_i${i}`).value;
             const dias_i = (fi1 && fi2) ? Math.max(1, Math.floor((new Date(fi1+'T00:00:00') - new Date(fi2+'T00:00:00')) / 864e5) + 1) : 0;
             
             const dif_lec = Math.max(0, getVal(`lec_act_i${i}`) - getVal(`lec_ant_i${i}`));
+            const kwh_dia = dias_i > 0 ? (dif_lec / dias_i) : 0;
+
+            document.getElementById(`dias_i${i}`).value = dias_i > 0 ? dias_i : "0";
+            setVal(`kwh_dia_i${i}`, kwh_dia, 3);
+
             let ener_i = 0, aporte_i = 0;
 
             if (dias_i > 0 && dias_m > 0) {
-                ener_i = tarifa * dias_m * (dif_lec / dias_i);
-                aporte_i = factor_ley * dias_m * (dif_lec / dias_i);
+                // Ajuste proporcional de energía según los días del recibo principal
+                ener_i = tarifa * dias_m * kwh_dia;
+                aporte_i = factor_ley * dias_m * kwh_dia;
             }
 
-            // Distribución de cargos comunes por número de inquilinos
             const rep_i = getVal('rep_m') / num_div;
             const cf_i = getVal('cargo_fijo_m') / num_div;
             const alum_i = getVal('alum_m') / num_div;
