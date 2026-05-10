@@ -105,12 +105,12 @@
         .btn-limpiar { background: #ef4444; color: white; }
         .btn-pdf { background: #10b981; color: white; }
 
-        /* Estilos PDF - Mejorados para la captura */
+        /* Estilos PDF */
         #pdf-template-container { 
             position: absolute; 
             left: -9999px; 
             top: 0; 
-            width: 700px; /* Ancho fijo para consistencia */
+            width: 750px; 
         }
         .modo-recibo { 
             font-family: Arial, sans-serif !important; 
@@ -142,7 +142,8 @@
             background: #f8fafc; 
             border: 1px solid #cbd5e1; 
             border-radius: 8px; 
-            font-size: 0.85rem; 
+            font-size: 0.9rem; 
+            line-height: 1.6;
         }
     </style>
 </head>
@@ -151,7 +152,6 @@
 <div id="pdf-template-container"></div> 
 
 <div class="container">
-    <!-- RECIBO PRINCIPAL -->
     <div class="card" id="main-receipt">
         <div class="header-card">
             <input type="text" id="titulo_principal" class="titulo-editable" value="RECIBO PRINCIPAL DE LUZ">
@@ -162,7 +162,10 @@
             <b>GLOSARIO:</b><br>
             • <b>Rep./Mant.:</b> Reposición y Mantenimiento de conexión.<br>
             • <b>Red. Ant. / Red. Act.:</b> Redondeo del mes Anterior y Actual.<br>
-            • <b>L. Ant / L. Act:</b> Lectura Anterior y Actual del medidor.
+            • <b>L. Ant / L. Act:</b> Lectura Anterior y Actual del medidor.<br>
+            • <b>F. Ant / F. Act:</b> Fecha Anterior y Actual de lectura.<br>
+            • <b>Aporte de Ley N° 28749:</b> Ley de Electrificación Rural.<br><br>
+            <b>FACTOR DE APORTE:</b> <span id="detalle_factor" style="font-weight:bold; color:var(--primary)">-</span>
         </div>
 
         <div class="grid-2">
@@ -175,11 +178,11 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>UIT (S/.):</label>
+                <label>UIT Vigente:</label>
                 <select id="uit_val" onchange="calculate()">
-                    <option value="5150">2024 (5150)</option>
-                    <option value="5350">2025 (5350)</option>
-                    <option value="5550" selected>2026 (5550)</option>
+                    <option value="5150">2024 (S/. 5150)</option>
+                    <option value="5350">2025 (S/. 5350)</option>
+                    <option value="5550" selected>2026 (S/. 5550)</option>
                 </select>
             </div>
         </div>
@@ -195,13 +198,13 @@
         <div class="section-title">Importes del Recibo (S/.)</div>
         <div class="grid-2">
             <div class="form-group"><label>Tarifa kWh:</label><input type="number" id="tarifa" value="0.75" step="0.0001" oninput="calculate()"></div>
-            <div class="form-group"><label>Rep./Mant:</label><input type="number" id="rep_m" value="0" oninput="calculate()"></div>
-            <div class="form-group"><label>Cargo Fijo:</label><input type="number" id="cargo_fijo_m" value="0" oninput="calculate()"></div>
-            <div class="form-group"><label>Alumbrado:</label><input type="number" id="alum_m" value="0" oninput="calculate()"></div>
-            <div class="form-group"><label>Interés:</label><input type="number" id="int_m" value="0" oninput="calculate()"></div>
-            <div class="form-group"><label>Red. Ant:</label><input type="number" id="red_ant_m" value="0" oninput="calculate()"></div>
-            <div class="form-group"><label>Red. Act:</label><input type="number" id="red_act_m" value="0" oninput="calculate()"></div>
-            <div class="form-group"><label>N° Inquilinos:</label><input type="number" id="num_inquilinos" value="3" oninput="calculate()"></div>
+            <div class="form-group"><label>Rep./Mant:</label><input type="number" id="rep_m" value="0" step="0.01" oninput="calculate()"></div>
+            <div class="form-group"><label>Cargo Fijo:</label><input type="number" id="cargo_fijo_m" value="0" step="0.01" oninput="calculate()"></div>
+            <div class="form-group"><label>Alumbrado:</label><input type="number" id="alum_m" value="0" step="0.01" oninput="calculate()"></div>
+            <div class="form-group"><label>Interés/Otros:</label><input type="number" id="int_m" value="0" step="0.01" oninput="calculate()"></div>
+            <div class="form-group"><label>Red. Ant:</label><input type="number" id="red_ant_m" value="0" step="0.01" oninput="calculate()"></div>
+            <div class="form-group"><label>Red. Act:</label><input type="number" id="red_act_m" value="0" step="0.01" oninput="calculate()"></div>
+            <div class="form-group"><label>Inquilinos:</label><input type="number" id="num_inquilinos" value="3" oninput="calculate()"></div>
         </div>
 
         <div class="form-group" style="margin-top:15px">
@@ -210,13 +213,11 @@
         </div>
     </div>
 
-    <!-- CONTENEDOR DE INQUILINOS -->
     <div id="inquilinos-container"></div>
 </div>
 
 <script>
     const container = document.getElementById('inquilinos-container');
-    // Generar 3 inquilinos
     for (let i = 1; i <= 3; i++) {
         container.innerHTML += `
         <div class="card" id="recibo_i${i}" style="margin-bottom:20px">
@@ -236,12 +237,12 @@
             <div class="section-title">Desglose Inquilino (S/.)</div>
             <div class="grid-2">
                 <div class="form-group"><label>Energía:</label><input id="ener_i${i}" class="readonly" readonly></div>
-                <div class="form-group"><label>Mantenim:</label><input id="rep_i${i}" class="readonly" readonly></div>
+                <div class="form-group"><label>Rep./Mant:</label><input id="rep_i${i}" class="readonly" readonly></div>
                 <div class="form-group"><label>Cargo Fijo:</label><input id="cf_i${i}" class="readonly" readonly></div>
                 <div class="form-group"><label>Alumbrado:</label><input id="alum_i${i}" class="readonly" readonly></div>
                 <div class="form-group"><label>Interés:</label><input id="int_i${i}" class="readonly" readonly></div>
-                <div class="form-group"><label>IGV:</label><input id="igv_i${i}" class="readonly" readonly></div>
-                <div class="form-group"><label>Aporte Ley:</label><input id="aporte_i${i}" class="readonly" readonly></div>
+                <div class="form-group"><label>IGV (18%):</label><input id="igv_i${i}" class="readonly" readonly></div>
+                <div class="form-group"><label>Ley N° 28749:</label><input id="aporte_i${i}" class="readonly" readonly></div>
                 <div class="form-group"><label>Redondeo:</label><input id="red_i${i}" class="readonly" readonly></div>
             </div>
             <div class="form-group" style="margin-top:10px">
@@ -258,131 +259,106 @@
 
     function calculate() {
         const uit = getVal('uit_val');
-        const fose = (2 * uit) / 1000000;
+        const factorLey = (2 * uit) / 1000000;
+        document.getElementById('detalle_factor').innerText = factorLey.toFixed(6);
+
         const n = getVal('num_inquilinos') || 1;
         const t = getVal('tarifa');
 
-        // Cálculo Días Recibo Principal
         const f1m = document.getElementById('fec_act_m').value;
         const f2m = document.getElementById('fec_ant_m').value;
         const dm = (f1m && f2m) ? Math.max(1, Math.floor((new Date(f1m+'T00:00:00') - new Date(f2m+'T00:00:00')) / 864e5) + 1) : 0;
 
-        // Total Principal
         const km = Math.max(0, getVal('lec_act_m') - getVal('lec_ant_m'));
         const sm = getVal('rep_m') + getVal('cargo_fijo_m') + (km * t) + getVal('alum_m') + getVal('int_m');
-        setVal('total_pagar_m', sm + (sm * 0.18) + (km * fose) + getVal('red_ant_m') + getVal('red_act_m'));
+        setVal('total_pagar_m', sm + (sm * 0.18) + (km * factorLey) + getVal('red_ant_m') + getVal('red_act_m'));
 
-        // Cálculos por Inquilino
         for (let i = 1; i <= 3; i++) {
             const f1i = document.getElementById(`fec_act_i${i}`).value;
             const f2i = document.getElementById(`fec_ant_i${i}`).value;
             const di = (f1i && f2i) ? Math.max(1, Math.floor((new Date(f1i+'T00:00:00') - new Date(f2i+'T00:00:00')) / 864e5) + 1) : 0;
-            
-            const li_act = getVal(`lec_act_i${i}`);
-            const li_ant = getVal(`lec_ant_i${i}`);
-            const ki = Math.max(0, li_act - li_ant);
-            
-            // Proporción por día
+            const ki = Math.max(0, getVal(`lec_act_i${i}`) - getVal(`lec_ant_i${i}`));
             const kd = di > 0 ? (ki / di) : 0;
+
             const en_i = (di > 0 && dm > 0) ? (t * dm * kd) : 0;
-            const ap_i = (di > 0 && dm > 0) ? (fose * dm * kd) : 0;
-            
-            const cargos_fijos_i = (getVal('rep_m')/n) + (getVal('cargo_fijo_m')/n) + (getVal('alum_m')/n) + (getVal('int_m')/n);
-            const subtotal_i = en_i + cargos_fijos_i;
-            const igv_i = subtotal_i * 0.18;
+            const ap_i = (di > 0 && dm > 0) ? (factorLey * dm * kd) : 0;
+            const sub_i = en_i + (getVal('rep_m')/n) + (getVal('cargo_fijo_m')/n) + (getVal('alum_m')/n) + (getVal('int_m')/n);
             const red_i = (getVal('red_ant_m') + getVal('red_act_m')) / n;
 
-            setVal(`ener_i${i}`, en_i); 
-            setVal(`rep_i${i}`, getVal('rep_m')/n); 
-            setVal(`cf_i${i}`, getVal('cargo_fijo_m')/n);
-            setVal(`alum_i${i}`, getVal('alum_m')/n); 
-            setVal(`int_i${i}`, getVal('int_m')/n); 
-            setVal(`igv_i${i}`, igv_i);
-            setVal(`aporte_i${i}`, ap_i); 
-            setVal(`red_i${i}`, red_i);
-            
-            setVal(`total_pagar_i${i}`, subtotal_i + igv_i + ap_i + red_i);
+            setVal(`ener_i${i}`, en_i); setVal(`rep_i${i}`, getVal('rep_m')/n); setVal(`cf_i${i}`, getVal('cargo_fijo_m')/n);
+            setVal(`alum_i${i}`, getVal('alum_m')/n); setVal(`int_i${i}`, getVal('int_m')/n); setVal(`igv_i${i}`, sub_i * 0.18);
+            setVal(`aporte_i${i}`, ap_i); setVal(`red_i${i}`, red_i);
+            setVal(`total_pagar_i${i}`, sub_i + (sub_i * 0.18) + ap_i + red_i);
         }
     }
 
     function descargarPDF(id) {
         const tempCont = document.getElementById('pdf-template-container');
         const mes = document.getElementById('mes_principal').value;
-        const nombreUser = document.getElementById(`titulo_i${id}`).value;
-        
         const l_ant = getVal(`lec_ant_i${id}`);
         const l_act = getVal(`lec_act_i${id}`);
         const cons = parseFloat((l_act - l_ant).toFixed(2));
-        
         const f1i = document.getElementById(`fec_act_i${id}`).value;
         const f2i = document.getElementById(`fec_ant_i${id}`).value;
         const di = (f1i && f2i) ? Math.max(1, Math.floor((new Date(f1i+'T00:00:00') - new Date(f2i+'T00:00:00')) / 864e5) + 1) : 0;
-        
         const f1m = document.getElementById('fec_act_m').value;
         const f2m = document.getElementById('fec_ant_m').value;
         const dm = (f1m && f2m) ? Math.max(1, Math.floor((new Date(f1m+'T00:00:00') - new Date(f2m+'T00:00:00')) / 864e5) + 1) : 0;
+        const c_dia = di > 0 ? (cons / di) : 0;
 
-        // Inyectar HTML al contenedor temporal
         tempCont.innerHTML = `
-            <div class="modo-recibo" id="captura-pdf">
+            <div class="modo-recibo" id="recibo-captura">
                 <div class="header-pdf">
-                    <div><b style="color:var(--enel-blue); font-size:1.5rem">RECIBO DE LUZ</b><br>Mes de facturación: ${mes}</div>
-                    <div class="total-box-pdf"><small>TOTAL A PAGAR</small><br><b style="font-size:1.4rem">S/. ${document.getElementById(`total_pagar_i${id}`).value}</b></div>
+                    <div><b style="color:var(--enel-blue); font-size:1.6rem">RECIBO DE LUZ</b><br>Mes: ${mes}</div>
+                    <div class="total-box-pdf"><small>TOTAL A PAGAR</small><br><b style="font-size:1.5rem">S/. ${document.getElementById(`total_pagar_i${id}`).value}</b></div>
                 </div>
                 <div style="margin-bottom:15px">
-                    <b>Usuario:</b> ${nombreUser}<br>
-                    <b>Detalle Lectura:</b> ${l_ant} (Anterior) - ${l_act} (Actual) = <b>${cons.toFixed(2)} kWh</b>
+                    <b>Usuario:</b> ${document.getElementById(`titulo_i${id}`).value}<br>
+                    <b>Detalle Lectura:</b> ${l_ant} (Ant.) - ${l_act} (Act.) = <b>${cons.toFixed(2)} kWh</b>
                 </div>
                 <table class="tabla-pdf">
-                    <thead><tr><th>Detalle del Concepto</th><th style="text-align:right">Importe S/.</th></tr></thead>
+                    <thead><tr><th>Detalle del Concepto</th><th style="text-align:right">S/.</th></tr></thead>
                     <tbody>
-                        <tr><td>Consumo de Energía Eléctrica</td><td style="text-align:right">${document.getElementById(`ener_i${id}`).value}</td></tr>
-                        <tr><td>Mantenimiento y Reposición</td><td style="text-align:right">${document.getElementById(`rep_i${id}`).value}</td></tr>
+                        <tr><td>Energía Eléctrica Consumida</td><td style="text-align:right">${document.getElementById(`ener_i${id}`).value}</td></tr>
+                        <tr><td>Reposición y Mantenimiento</td><td style="text-align:right">${document.getElementById(`rep_i${id}`).value}</td></tr>
                         <tr><td>Cargo Fijo Mensual</td><td style="text-align:right">${document.getElementById(`cf_i${id}`).value}</td></tr>
                         <tr><td>Alumbrado Público</td><td style="text-align:right">${document.getElementById(`alum_i${id}`).value}</td></tr>
-                        <tr><td>Intereses / Otros</td><td style="text-align:right">${document.getElementById(`int_i${id}`).value}</td></tr>
+                        <tr><td>Interés / Otros</td><td style="text-align:right">${document.getElementById(`int_i${id}`).value}</td></tr>
                         <tr><td>IGV (18%)</td><td style="text-align:right">${document.getElementById(`igv_i${id}`).value}</td></tr>
-                        <tr><td>Aporte Ley FOSE</td><td style="text-align:right">${document.getElementById(`aporte_i${id}`).value}</td></tr>
-                        <tr><td>Redondeo Mes</td><td style="text-align:right">${document.getElementById(`red_i${id}`).value}</td></tr>
+                        <tr><td>Aporte de Ley N° 28749</td><td style="text-align:right">${document.getElementById(`aporte_i${id}`).value}</td></tr>
+                        <tr><td>Redondeo del Mes</td><td style="text-align:right">${document.getElementById(`red_i${id}`).value}</td></tr>
                     </tbody>
                 </table>
                 <div class="detalle-calculo">
-                    <h4 style="margin:0 0 5px 0; color:var(--enel-blue)">Memoria de Cálculo:</h4>
-                    1. Consumo periodo: ${cons.toFixed(2)} kWh en ${di} días.<br>
-                    2. Promedio diario: ${(di > 0 ? cons/di : 0).toFixed(2)} kWh/día.<br>
-                    3. Energía ajustada a días del recibo principal (${dm} días): <b>S/. ${document.getElementById(`ener_i${id}`).value}</b>
+                    <b style="color:var(--enel-blue)">Detalle del Cálculo de Energía:</b><br>
+                    1. <b>Consumo entre las fechas tomadas en la lectura:</b> ${l_act} - ${l_ant} = ${cons.toFixed(2)} kWh<br>
+                    2. <b>Consumo Diario:</b> ${cons.toFixed(2)} kWh ÷ ${di} días = ${c_dia.toFixed(2)} kWh/día<br>
+                    3. <b>Monto Energía:</b> ${getVal('tarifa').toFixed(2)} (Tarifa) × ${dm} (Días Recibo) × ${c_dia.toFixed(2)} (kWh/día) = <b>S/. ${document.getElementById(`ener_i${id}`).value}</b>
                 </div>
             </div>`;
 
-        // Configuracion de html2pdf
-        const element = document.getElementById('captura-pdf');
-        const opt = {
+        html2pdf().set({
             margin: [10, 10],
-            filename: `Recibo_Luz_${nombreUser.replace(/\s+/g, '_')}_${mes}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+            filename: `Recibo_${document.getElementById(`titulo_i${id}`).value}.pdf`,
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        // Generar y descargar
-        html2pdf().set(opt).from(element).save().then(() => {
-            tempCont.innerHTML = ''; // Limpiar después de usar
-        });
+        }).from(document.getElementById('recibo-captura')).save().then(() => { tempCont.innerHTML = ''; });
     }
 
     function limpiarPrincipal() {
-        ['lec_ant_m','lec_act_m','fec_ant_m','fec_act_m','rep_m','cargo_fijo_m','alum_m','int_m','red_ant_m','red_act_m'].forEach(id => { 
-            document.getElementById(id).value = (id.includes('fec')) ? '' : '0'; 
+        ['lec_ant_m','lec_act_m','fec_ant_m','fec_act_m','rep_m','cargo_fijo_m','alum_m','int_m','red_ant_m','red_act_m'].forEach(id => {
+            const el = document.getElementById(id); if(el) el.value = (el.type === 'number') ? '0' : '';
         });
         calculate();
     }
 
     function limpiarInquilino(i) {
-        [`lec_ant_i${i}`, `lec_act_i${i}`, `fec_ant_i${i}`, `fec_act_i${i}`].forEach(id => { 
-            document.getElementById(id).value = (id.includes('fec')) ? '' : '0'; 
+        [`lec_ant_i${i}`, `lec_act_i${i}`, `fec_ant_i${i}`, `fec_act_i${i}`].forEach(id => {
+            const el = document.getElementById(id); if(el) el.value = (el.type === 'number') ? '0' : '';
         });
         calculate();
     }
+    calculate();
 </script>
 </body>
 </html>
