@@ -164,8 +164,7 @@
             • <b>Red. Ant. / Red. Act.:</b> Redondeo del mes Anterior y Actual.<br>
             • <b>L. Ant / L. Act:</b> Lectura Anterior y Actual del medidor.<br>
             • <b>F. Ant / F. Act:</b> Fecha Anterior y Actual de lectura.<br>
-            • <b>Aporte de Ley N° 28749:</b> Ley de Electrificación Rural.<br><br>
-            <b>FACTOR DE APORTE:</b> <span id="detalle_factor" style="font-weight:bold; color:var(--primary)">-</span>
+            <b>FACTOR DE APORTE DE LEY:</b> <span id="detalle_factor" style="font-weight:bold; color:var(--primary)">-</span>
         </div>
 
         <div class="grid-2">
@@ -197,14 +196,14 @@
 
         <div class="section-title">Importes del Recibo (S/.)</div>
         <div class="grid-2">
-            <div class="form-group"><label>Tarifa kWh:</label><input type="number" id="tarifa" value="0.75" step="0.0001" oninput="calculate()"></div>
+            <div class="form-group"><label>Tarifa kWh:</label><input type="number" id="tarifa" value="0" step="0.0001" oninput="calculate()"></div>
             <div class="form-group"><label>Rep./Mant:</label><input type="number" id="rep_m" value="0" step="0.01" oninput="calculate()"></div>
             <div class="form-group"><label>Cargo Fijo:</label><input type="number" id="cargo_fijo_m" value="0" step="0.01" oninput="calculate()"></div>
             <div class="form-group"><label>Alumbrado:</label><input type="number" id="alum_m" value="0" step="0.01" oninput="calculate()"></div>
             <div class="form-group"><label>Interés/Otros:</label><input type="number" id="int_m" value="0" step="0.01" oninput="calculate()"></div>
             <div class="form-group"><label>Red. Ant:</label><input type="number" id="red_ant_m" value="0" step="0.01" oninput="calculate()"></div>
             <div class="form-group"><label>Red. Act:</label><input type="number" id="red_act_m" value="0" step="0.01" oninput="calculate()"></div>
-            <div class="form-group"><label>Inquilinos:</label><input type="number" id="num_inquilinos" value="3" oninput="calculate()"></div>
+            <div class="form-group"><label>Inquilinos:</label><input type="number" id="num_inquilinos" value="0" oninput="calculate()"></div>
         </div>
 
         <div class="form-group" style="margin-top:15px">
@@ -333,7 +332,7 @@
                     <b style="color:var(--enel-blue)">Detalle del Cálculo de Energía:</b><br>
                     1. <b>Consumo entre las fechas tomadas en la lectura:</b> ${l_act} - ${l_ant} = ${cons.toFixed(2)} kWh<br>
                     2. <b>Consumo Diario:</b> ${cons.toFixed(2)} kWh ÷ ${di} días = ${c_dia.toFixed(2)} kWh/día<br>
-                    3. <b>Monto Energía:</b> ${getVal('tarifa').toFixed(2)} (Tarifa) × ${dm} (Días Recibo) × ${c_dia.toFixed(2)} (kWh/día) = <b>S/. ${document.getElementById(`ener_i${id}`).value}</b>
+                    3. <b>Monto Energía:</b> ${getVal('tarifa').toFixed(4)} (Tarifa) × ${dm} (Días Recibo) × ${c_dia.toFixed(2)} (kWh/día) = <b>S/. ${document.getElementById(`ener_i${id}`).value}</b>
                 </div>
             </div>`;
 
