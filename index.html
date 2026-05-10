@@ -116,7 +116,6 @@
 <body>
 
 <div class="container">
-    <!-- RECIBO PRINCIPAL -->
     <div class="card" id="main-receipt">
         <div class="header-card">
             <input type="text" id="titulo_principal" class="titulo-editable" value="RECIBO PRINCIPAL DE LUZ">
@@ -193,7 +192,6 @@
         </div>
     </div>
 
-    <!-- INQUILINOS -->
     <div id="inquilinos-container"></div>
 </div>
 
@@ -343,7 +341,7 @@
     }
 
     function limpiarPrincipal() {
-        ['lec_ant_m','lec_act_m','fec_ant_m','fec_act_m','rep_m','cargo_fijo_m','alum_m','int_m','red_ant_m','red_act_m'].forEach(id => document.getElementById(id).value = '');
+        ['lec_ant_m','lec_act_m','fec_ant_m','fec_act_m','rep_m','cargo_fijo_m','alum_m','int_m','red_ant_m','red_act_m', 'tarifa', 'num_inquilinos'].forEach(id => document.getElementById(id).value = '');
         calculate();
     }
 
