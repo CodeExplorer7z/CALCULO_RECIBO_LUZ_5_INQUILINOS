@@ -13,7 +13,7 @@
             --text: #1e293b;
             --border: #e2e8f0;
             --enel-blue: #005fb8;
-            --input-fill: #fff9c4; /* Color amarillo para celdas a rellenar */
+            --input-fill: #fff9c4;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
@@ -69,14 +69,13 @@
         }
         label { font-size: 0.85rem; font-weight: bold; }
         
-        /* Estilo para inputs de entrada de datos */
         input:not(.readonly), select:not(.readonly) {
             padding: 10px;
             border: 1px solid var(--border);
             border-radius: 8px;
             font-size: 1rem;
             width: 100%;
-            background-color: var(--input-fill); /* Fondo amarillo */
+            background-color: var(--input-fill);
         }
 
         .readonly { 
@@ -174,11 +173,16 @@
 
         <div class="info-box">
             <b>GLOSARIO:</b><br>
-            • <b>Rep./Mant.:</b> Reposición y Mantenimiento de conexión.<br>
-            • <b>Red. Ant. / Red. Act.:</b> Redondeo del mes Anterior y Actual.<br>
-            • <b>L. Ant / L. Act:</b> Lectura Anterior y Actual del medidor.<br>
-            • <b>F. Ant / F. Act:</b> Fecha Anterior y Actual de lectura.<br>
-            <b>FACTOR DE APORTE DE LEY:</b> <span id="detalle_factor" style="font-weight:bold; color:var(--primary)">-</span>
+            • <b>Rep./Mant.	:</b> Reposición y Mantenimiento de conexión.<br>
+            • <b>L. Ant    	:</b> Lectura Anterior.<br>
+	    • <b>L. Act	  	:</b> Lectura Actual.<br>
+	    • <b>F. Ant   	:</b> Fecha de lectura Anterior.<br>
+            • <b>F. Act    	:</b> Fecha de lectura Actual.<br>
+	    • <b>Alumbrado 	:</b> Alumbrado público.<br>
+	    • <b>Red. Ant.	:</b> Redondeo anterior.<br>
+	    • <b>Red. Act.	:</b> Redondeo actual.<br>
+	    • <b>Interés/Otros	:</b> Interés compensatorio.<br>
+            <b>FACTOR APORTE DE LEY (UIT 2026 - S/. 5350):</b> <span id="detalle_factor" style="font-weight:bold; color:var(--primary)">-</span>
         </div>
 
         <div class="grid-2">
@@ -191,16 +195,12 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>UIT Vigente:</label>
-                <select id="uit_val" onchange="calculate()">
-                    <option value="5150">2024 (S/. 5150)</option>
-                    <option value="5350">2025 (S/. 5350)</option>
-                    <option value="5550" selected>2026 (S/. 5550)</option>
-                </select>
+                <label>N° Inquilinos:</label>
+                <input type="number" id="num_inquilinos" value="3" oninput="calculate()">
             </div>
         </div>
 
-        <div class="section-title">Lecturas y Fechas</div>
+        <div class="section-title">Lecturas y Fechas Recibo General</div>
         <div class="grid-2">
             <div class="form-group"><label>L. Ant:</label><input type="number" id="lec_ant_m" oninput="calculate()"></div>
             <div class="form-group"><label>L. Act:</label><input type="number" id="lec_act_m" oninput="calculate()"></div>
@@ -217,7 +217,7 @@
             <div class="form-group"><label>Interés/Otros:</label><input type="number" id="int_m" value="0" step="0.01" oninput="calculate()"></div>
             <div class="form-group"><label>Red. Ant:</label><input type="number" id="red_ant_m" value="0" step="0.01" oninput="calculate()"></div>
             <div class="form-group"><label>Red. Act:</label><input type="number" id="red_act_m" value="0" step="0.01" oninput="calculate()"></div>
-            <div class="form-group"><label>Inquilinos:</label><input type="number" id="num_inquilinos" value="0" oninput="calculate()"></div>
+            <div class="form-group"><label>Aporte Ley:</label><input type="text" id="aporte_ley_m" class="readonly" readonly></div>
         </div>
 
         <div class="form-group" style="margin-top:15px">
@@ -230,6 +230,8 @@
 </div>
 
 <script>
+    const UIT_VIGENTE = 5350;
+
     const container = document.getElementById('inquilinos-container');
     for (let i = 1; i <= 3; i++) {
         container.innerHTML += `
@@ -271,8 +273,7 @@
     }
 
     function calculate() {
-        const uit = getVal('uit_val');
-        const factorLey = (2 * uit) / 1000000;
+        const factorLey = (2 * UIT_VIGENTE) / 1000000;
         document.getElementById('detalle_factor').innerText = factorLey.toFixed(6);
 
         const n = getVal('num_inquilinos') || 1;
@@ -283,8 +284,13 @@
         const dm = (f1m && f2m) ? Math.max(1, Math.floor((new Date(f1m+'T00:00:00') - new Date(f2m+'T00:00:00')) / 864e5) + 1) : 0;
 
         const km = Math.max(0, getVal('lec_act_m') - getVal('lec_ant_m'));
+        const aporteLeyPrincipal = km * factorLey;
+        
+        // Actualizar el campo de Aporte Ley en el principal
+        setVal('aporte_ley_m', aporteLeyPrincipal, 2);
+
         const sm = getVal('rep_m') + getVal('cargo_fijo_m') + (km * t) + getVal('alum_m') + getVal('int_m');
-        setVal('total_pagar_m', sm + (sm * 0.18) + (km * factorLey) + getVal('red_ant_m') + getVal('red_act_m'));
+        setVal('total_pagar_m', sm + (sm * 0.18) + aporteLeyPrincipal + getVal('red_ant_m') + getVal('red_act_m'));
 
         for (let i = 1; i <= 3; i++) {
             const f1i = document.getElementById(`fec_act_i${i}`).value;
