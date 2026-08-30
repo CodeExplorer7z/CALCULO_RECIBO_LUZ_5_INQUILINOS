@@ -38,14 +38,23 @@
             -moz-appearance: textfield;
         }
 
-        .container {
+        .layout-wrapper {
             max-width: 1200px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 15px;
         }
-        @media (min-width: 900px) { .container { grid-template-columns: 1fr 1fr; } }
+        .col-main, .col-tenants {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+        @media (min-width: 900px) { 
+            .layout-wrapper { flex-direction: row; align-items: flex-start; }
+            .col-main, .col-tenants { width: 50%; }
+        }
         
         .card {
             background: var(--card);
@@ -271,7 +280,6 @@
             color: #0f172a;
         }
         
-        /* CORRECCIÓN: Fondo blanco estilizado para el bloque final del total */
         .pdf-calculos .bloque-total {
             background: #ffffff;
             border: 2px solid #1e3a8a;
@@ -294,7 +302,7 @@
         }
         .pdf-calculos .bloque-total .linea-operacion {
             border-top: 2px solid #1e3a8a;
-            color: #d97706; /* Tono naranja oscuro resaltado */
+            color: #d97706; 
             font-size: 1.05rem;
             padding-top: 6px;
         }
@@ -304,8 +312,10 @@
 
 <div id="pdf-template-container"></div> 
 
-<div class="container">
-    <div class="card" id="main-receipt">
+<div class="layout-wrapper">
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="col-main">
+        <div class="card" id="main-receipt">
         <div class="header-card">
             <div id="titulo_principal" class="titulo-fijo">RECIBO PRINCIPAL DE LUZ</div>
             <button class="btn btn-limpiar" onclick="limpiarPrincipal()">Limpiar Datos</button>
@@ -355,11 +365,30 @@
             <input type="text" id="total_pagar_m" class="readonly" style="font-size:1.3rem; border:none; background:transparent" readonly>
         </div>
     </div>
+    </div> <!-- FIN COLUMNA IZQUIERDA -->
 
-    <div id="inquilinos-container"></div>
+    <!-- COLUMNA DERECHA -->
+    <div class="col-tenants">
+        <!-- SECCIÓN DE RESUMEN AÑADIDA -->
+        <div class="card" id="resumen-card">
+        <div class="header-card">
+            <div class="titulo-fijo">RESUMEN DE RECIBOS DE INQUILINOS</div>
+        </div>
+        <div id="resumen-datos" style="margin-bottom: 15px;">
+            <!-- Se llenará dinámicamente con JavaScript -->
+        </div>
+        <div style="text-align: center; margin-top: 10px;">
+            <button class="btn btn-pdf" onclick="descargarResumenPDF()" style="width: auto; padding: 10px 20px; font-size: 1rem;">Descargar Resumen PDF</button>
+        </div>
+    </div>
+
+        <div id="inquilinos-container" style="display: flex; flex-direction: column; gap: 15px;"></div>
+    </div> <!-- FIN COLUMNA DERECHA -->
 </div>
 
 <script>
+    const inqContainer = document.getElementById('inquilinos-container');
+
     // Bloquear scroll dentro de celdas numéricas para evitar cambios no deseados
     document.addEventListener('wheel', function(e) {
         if (document.activeElement.type === 'number') {
@@ -370,12 +399,11 @@
     const UIT_VIGENTE = 5500;
 
     // Inicializar las 5 tarjetas de inquilinos
-    const container = document.getElementById('inquilinos-container');
     for (let i = 1; i <= 5; i++) {
-        container.innerHTML += `
-        <div class="card" id="recibo_i${i}" style="margin-bottom:20px">
+        inqContainer.innerHTML += `
+        <div class="card" id="recibo_i${i}" style="margin-bottom:0px">
             <div class="header-card">
-                <input type="text" id="titulo_i${i}" class="titulo-editable" value="Inquilino ${i}">
+                <input type="text" id="titulo_i${i}" class="titulo-editable" value="Inquilino ${i}" oninput="actualizarResumen()">
                 <div class="btn-group">
                     <button class="btn btn-limpiar" onclick="limpiarInquilino(${i})">Borrar</button>
                     <button class="btn btn-pdf" onclick="descargarPDF(${i})">Descargar PDF</button>
@@ -490,6 +518,96 @@
             const total_i = sub_i + (sub_i * 0.18) + ap_i + (getVal('red_ant_m')/n) + (getVal('red_act_m')/n);
             setVal(`total_pagar_i${i}`, total_i);
         }
+        
+        // Actualizar datos del resumen cada vez que se calculan
+        actualizarResumen();
+    }
+    
+    // Función para actualizar el cuadro del resumen de los inquilinos 1, 2 y 3
+    function actualizarResumen() {
+        const km = Math.max(0, getVal('lec_act_m') - getVal('lec_ant_m'));
+        const totalM = document.getElementById('total_pagar_m').value || "0.00";
+        
+        // Días totales del recibo principal (dm)
+        const f1m = document.getElementById('fec_act_m').value;
+        const f2m = document.getElementById('fec_ant_m').value;
+        const dm = (f1m && f2m) ? Math.max(1, Math.floor((new Date(f1m+'T00:00:00') - new Date(f2m+'T00:00:00')) / 864e5) + 1) : 0;
+        
+        let html = `
+        <div class="info-box" style="font-size: 1.05rem; background: #e0f2fe; border-color: #bae6fd; color: #0369a1; text-align: center;">
+            <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">RECIBO PRINCIPAL</div>
+            <div>Total a Pagar: <b>S/. ${totalM}</b></div>
+            <div style="font-size: 0.9rem; margin-top: 2px;">Consumo Total: <b>${km.toFixed(2)} kWh</b></div>
+        </div>
+        
+        <table style="width:100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+                <tr>
+                    <th style="text-align: left; padding: 10px; border-bottom: 2px solid #cbd5e1; font-size: 0.95rem;">Nombre</th>
+                    <th style="text-align: center; padding: 10px; border-bottom: 2px solid #cbd5e1; font-size: 0.95rem;">Consumo</th>
+                    <th style="text-align: right; padding: 10px; border-bottom: 2px solid #cbd5e1; font-size: 0.95rem;">Total</th>
+                </tr>
+            </thead>
+            <tbody>`;
+            
+        // Extraemos solo los inquilinos 1, 2 y 3
+        for(let i=1; i<=3; i++) {
+            const elNombre = document.getElementById(`titulo_i${i}`);
+            const nombre = elNombre ? elNombre.value : `Inquilino ${i}`;
+            
+            // Calcular el consumo real (Consumo Diario x Días Totales Recibo)
+            const f1i = document.getElementById(`fec_act_i${i}`).value;
+            const f2i = document.getElementById(`fec_ant_i${i}`).value;
+            const di = (f1i && f2i) ? Math.max(1, Math.floor((new Date(f1i+'T00:00:00') - new Date(f2i+'T00:00:00')) / 864e5) + 1) : 0;
+            
+            const ki = Math.max(0, getVal(`lec_act_i${i}`) - getVal(`lec_ant_i${i}`));
+            const kd = di > 0 ? (ki / di) : 0; // Consumo diario del inquilino
+            
+            const k_i_real = dm > 0 ? (kd * dm) : 0; // Consumo real alineado al recibo principal
+            
+            const elTotal = document.getElementById(`total_pagar_i${i}`);
+            const t_i = elTotal ? elTotal.value : "0.00";
+            
+            html += `
+                <tr>
+                    <td style="padding: 12px 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 0.95rem;">${nombre}</td>
+                    <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem;">${k_i_real.toFixed(2)} kWh</td>
+                    <td style="text-align: right; font-weight: bold; padding: 12px 10px; border-bottom: 1px solid #e2e8f0; color: var(--primary); font-size: 1.05rem;">S/. ${t_i}</td>
+                </tr>`;
+        }
+        
+        html += `</tbody></table>`;
+        const resumenCont = document.getElementById('resumen-datos');
+        if(resumenCont) resumenCont.innerHTML = html;
+    }
+    
+    // Función para descargar el resumen en PDF
+    function descargarResumenPDF() {
+        const tempCont = document.getElementById('pdf-template-container');
+        const mes = document.getElementById('mes_principal').value.toUpperCase();
+        const filename = `RESUMEN INQUILINOS LUZ - ${mes}.pdf`;
+        
+        const resumenHTML = document.getElementById('resumen-datos').innerHTML;
+        
+        tempCont.innerHTML = `
+            <div class="modo-recibo" id="resumen-captura">
+                <div class="header-pdf" style="margin-bottom: 30px;">
+                    <div><b style="color:var(--enel-blue); font-size:1.6rem">RESUMEN DE RECIBOS DE INQUILINOS</b><br>MES DE FACTURACIÓN: ${mes}</div>
+                </div>
+                <div style="margin-top: 20px; font-size: 1.1rem;">
+                    ${resumenHTML}
+                </div>
+            </div>`;
+
+        html2pdf().set({
+            margin: [15, 15],
+            filename: filename,
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(document.getElementById('resumen-captura')).outputPdf('datauristring').then(async function(pdfBase64) {
+            tempCont.innerHTML = '';
+            await guardarOCompartirPDF(filename, pdfBase64);
+        });
     }
 
     function descargarPDF(id) {
